@@ -1,79 +1,61 @@
-extern crate serde_json;
+extern crate hyper;
+extern crate futures;
+extern crate url;
 
-use std::error::Error;
+mod json;
+
+use futures::future::Future;
+
+use hyper::{Method, StatusCode};
+use hyper::server::{Http, Request, Response, Service,};
 use std::fs::File;
+use std::error::Error;
 use std::io::prelude::*;
-use serde_json::{Value};
+
+struct Route;
+
+impl Service for Route {
+
+    type Request = Request;
+    type Response = Response;
+    type Error = hyper::Error;
+    type Future = Box<Future<Item=Self::Response, Error=Self::Error>>;
+
+    fn call(&self, req: Request) -> Self::Future {
+        let mut response = Response::new();
+
+         match (req.method(), req.path()) {
+            (&Method::Get, "/") => {
+                let path = "./web/index.html";
+
+                let mut file = match File::open(&path) {
+                    Err(why) => panic!("couldn't open {}: {}", path, why.description()),
+                    Ok(file) => file,
+                };
+                let mut contents = String::new();
+                match file.read_to_string(&mut contents) {
+                    Err(why) => panic!("couldn't read {}: {}", path, why.description()),
+                    Ok(_) => {
+                        response.set_body(contents);
+                    }
+                }
+            },
+            (&Method::Post, "/rust.php") => {
+                response.set_body(json::json_to_csv());
+            },
+            _ => {
+                response.set_status(StatusCode::NotFound);
+            },
+        };
+
+        Box::new(futures::future::ok(response))
+    }
+
+}
 
 
 fn main() {
-    let mut response = "".to_string();
-    let mut header = "".to_string();
-
-    let path = "json.js";
-
-    let mut file = match File::open(&path) {
-        Err(why) => panic!("couldn't open {}: {}", path, why.description()),
-        Ok(file) => file,
-    };
-
-    let mut s = String::new();
-    match file.read_to_string(&mut s) {
-        Err(why) => panic!("couldn't read {}: {}", path, why.description()),
-        Ok(_) => {
-            
-            let v: Value = serde_json::from_str(&s).unwrap_or_default();
-            if v.is_array() {
-                let mut cp = true;
-                for array in v.as_array().unwrap() {
-                    if cp {
-                        for (i,_) in  array.as_object().unwrap() {
-                            header.push_str(i);
-                            header.push_str(";");
-                        }
-                        cp = false;
-                        header.push_str("\n");
-                    }
-                    for (_,value) in  array.as_object().unwrap() {
-                        response.push_str(&value.to_string()); 
-                        response.push_str(";");;
-                    }
-                    response.push_str("\n");
-
-                }
-              
-            } else{
-
-                for (i,_) in  v.as_object().unwrap() {
-                    header.push_str(i);
-                    header.push_str(";");
-                }
-                header.push_str("\n");
-
-                for (_,value) in  v.as_object().unwrap() {
-                    response.push_str(&value.to_string()); 
-                    response.push_str(";");;
-                }
-                response.push_str("\n");
-            }
-
-            header.push_str(&response); 
-          
-            let path ="json.csv";
-            
-            let mut file = match File::create(&path) {
-                Err(why) => panic!("couldn't create {}: {}", path, why.description()),
-                Ok(file) => file,
-            };
-
-            match file.write_all(header.as_bytes()) {
-                Err(why) => {
-                    panic!("couldn't write to {}: {}", path, why.description())
-                },
-                Ok(_) => println!("successfully wrote to {}", path),
-            }  
-           
-        }
-    }
-
+    let addr = "127.0.0.1:3000".parse().unwrap();
+    let server = Http::new().bind(&addr, || Ok(Route)).unwrap();
+    server.run().unwrap();
 }
