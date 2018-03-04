@@ -1,0 +1,11 @@
+{
+  "name": "rust",
+  "dependencies": {
+    "webpack-cli": "^2.0.10"
+  },
+  "devDependencies": {
+    "rust-native-wasm-loader": "^0.6.6",
+    "wasm-loader": "^1.3.0",
+    "webpack": "^4.1.0"
+  }
+}

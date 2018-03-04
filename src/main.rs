@@ -26,8 +26,22 @@ impl Service for Route {
 
          match (req.method(), req.path()) {
             (&Method::Get, "/") => {
-                let path = "./web/index.html";
+                let path = "./app/index.html";
 
+                let mut file = match File::open(&path) {
+                    Err(why) => panic!("couldn't open {}: {}", path, why.description()),
+                    Ok(file) => file,
+                };
+                let mut contents = String::new();
+                match file.read_to_string(&mut contents) {
+                    Err(why) => panic!("couldn't read {}: {}", path, why.description()),
+                    Ok(_) => {
+                        response.set_body(contents);
+                    }
+                }
+            },
+            (&Method::Get, "/boot.js") => {
+                let path = "./app/build/boot.js";
                 let mut file = match File::open(&path) {
                     Err(why) => panic!("couldn't open {}: {}", path, why.description()),
                     Ok(file) => file,

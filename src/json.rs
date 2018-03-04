@@ -9,7 +9,7 @@ pub fn json_to_csv() -> String {
     let mut response = "".to_string();
     let mut header = "".to_string();
 
-    let path = "json.js";
+    let path = "./resources/json.js";
 
     let mut file = match File::open(&path) {
         Err(why) => panic!("couldn't open {}: {}", path, why.description()),
@@ -58,7 +58,7 @@ pub fn json_to_csv() -> String {
 
             header.push_str(&response); 
           
-            let path ="json.csv";
+            let path ="./resources/json.csv";
             
             let mut file = match File::create(&path) {
                 Err(why) => panic!("couldn't create {}: {}", path, why.description()),

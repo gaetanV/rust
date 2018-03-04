@@ -1,4 +1,8 @@
+/**/.vscode/
 /**/target/*
 /**/test/*
+/**/package-lock.json*
 /**/Cargo.lock*
 /**/*.csv*
+/**/node_modules/
+/**/build/
